@@ -4,12 +4,12 @@
     margin: 3rem auto 6rem;
   }
   
-  .header {
+.header {
     display: flex;
     flex-direction: column;
     align-items: center;
-  }
+}
   
-  .backToHome {
+.backToHome {
     margin: 3rem 0 0;
-  }
+}
