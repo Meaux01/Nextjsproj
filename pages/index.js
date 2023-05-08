@@ -13,6 +13,12 @@ export default function Home() {
       </Head>
       <section className={utilStyles.headingMd}>
         <h1>Welcome To Meaux LLC</h1>
+        <button>
+          <Link href='/LoginPage'> Login In</Link>
+        </button>
+        <button>
+          <Link href='/SignupPage'>Sign up</Link>
+        </button>
         <p>
           (This is a sample website - we will be building something like this for you.{' '})
         </p>

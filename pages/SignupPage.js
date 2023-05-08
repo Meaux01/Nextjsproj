@@ -12,8 +12,10 @@ const schema = yup.object().shape({
     confirmPassword:yup.string().oneOf([yup.ref('password'),null],'Passwords must match').required('Confirm password is required')
 })
 
-export default function LoginPage(){
+export default function SignupPage(){
+
     const [error, setError] = useState(null);
+
     const {
         register,
         handleSubmit,
@@ -21,9 +23,10 @@ export default function LoginPage(){
     } = useForm({
         resolver:yupResolver(schema)
     });
-    async function handleLogin(data){
+
+    async function handleSignup(data){
         try{
-            const response = await axios.post('/api/login',data)
+            const response = await axios.post('/api/signup',data)
             console.log(response.data)
         }catch(error){
             setError(error.response.data.message);
@@ -31,8 +34,18 @@ export default function LoginPage(){
     }
 
     return(
-        <form onSubmit={handleSubmit(handleLogin)}>
+        <form onSubmit={handleSubmit(handleSignup)}>
             {error && <div>{error}</div>}
+            <div>
+                <label htmlFor="firstName">First Name</label>
+                <input id="firstName" type="firstName"{...register('firstName')}/>
+                {errors.firstName && <div>{errors.firstName.message}</div>}
+            </div>
+            <div>
+                <label htmlFor="lastName">Last Name</label>
+                <input id="lastName" type="lastName"{...register('lastName')}/>
+                {errors.lastName && <div>{errors.lastName.message}</div>}
+            </div>
             <div>
                 <label htmlFor="email">Email</label>
                 <input id="email" type="email"{...register('email')}/>
@@ -43,8 +56,13 @@ export default function LoginPage(){
                 <input id="password" type="password"{...register('password')}/>
                 {errors.password && <div>{errors.password.message}</div>}
             </div>
+            <div>
+                <label htmlFor="confirmPassword">Confirm Password</label>
+                <input id="confirmPassword" type="confirmPassword"{...register('confirmPassword')}/>
+                {errors.confirmPassword && <div>{errors.confirmPassword.message}</div>}
+            </div>
             <button type="submit" disabled={isSubmitting}>
-                Login
+                Signup
             </button>
         </form>
     )

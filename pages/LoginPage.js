@@ -3,6 +3,7 @@ import {useForm} from 'react-hook-form';
 import {yupResolver} from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import axios from 'axios';
+import Link from "next/link";
 
 const schema = yup.object().shape({
     email: yup.string().email('Invalid email').required('Email is required'),
@@ -41,7 +42,7 @@ export default function LoginPage(){
                 {errors.password && <div>{errors.password.message}</div>}
             </div>
             <button type="submit" disabled={isSubmitting}>
-                Login
+                <Link href='/videos'>Login</Link>
             </button>
         </form>
     )
