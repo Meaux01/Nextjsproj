@@ -3,6 +3,8 @@ import {useForm} from 'react-hook-form';
 import {yupResolver} from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import axios from 'axios';
+import Link from "next/link";
+
 
 const schema = yup.object().shape({
     firstName: yup.string().required('First name is required'),
@@ -62,7 +64,8 @@ export default function SignupPage(){
                 {errors.confirmPassword && <div>{errors.confirmPassword.message}</div>}
             </div>
             <button type="submit" disabled={isSubmitting}>
-                Signup
+               {/* <Link href='/BillingPage'>Signup</Link>  */}
+               Signup
             </button>
         </form>
     )
