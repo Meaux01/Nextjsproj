@@ -5,80 +5,113 @@ import {useStripe, useELements, CardElement} from '@stripe/react-stripe-js';
 import axios from "axios";
 import { siteTitle } from "../components/layouts";
 
-export default function BillingPage(){
-    const [loading, setLoading] = useState(false);
-    const [success, setSuccess] = useState(false);
-    const [error, setError] = useState(null);
-    const stripe = useStripe();
-    const elements = useELements();
+export const getServerSideProps = async () => {
+    const {NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY} = process.env
+    return{
+        props:{
+            stripePubKey: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+        }
+    }
+}
+const billingForm = () => {
+// Billing information fields and their initial values
+const [billingDetails, setBillingDetails] = useState({
+    name:'',
+    email: '',
+    address: '',
+    city: '',
+    state: '',
+    postalCode: '',
+    country: '',
+});
 
-    // Billing information fields and their initial values
-    const [billingDetails, setBillingDetails] = useState({
-        name:'',
-        email: '',
-        address: '',
-        city: '',
-        state: '',
-        postalCode: '',
-        country: '',
-    });
-
-    // Payment Information Fields and their initial values
-    const [paymentDetails, setPaymentDetails] = useState({
-        cardHolderName: '',
-        cardNumber: '',
-        expiryMonth: '',
-        expiryYear: '',
+// Payment Information Fields and their initial values
+const [paymentDetails, setPaymentDetails] = useState({
+    cardHolderName: '',
+    cardNumber: '',
+    expiryMonth: '',
+    expiryYear: '',
         cvc: '',
     })
     
+const [loading, setLoading] = useState(false);
+const [success, setSuccess] = useState(false);
+const [error, setError] = useState(null);
+const stripe = useStripe();
+const elements = useELements();
+
     // Handle changes in billing information fields
     function handleBillingDetailsChange(event){
         const { name, value} = event.target;
         setBillingDetails((prev)=>({...prev, [name]:value}))
     }
-
-
+    
+    
     // Handle changes in payment information fields
     function handlePaymentDetailsChange(event){
         const { name, value} = event.target;
         setPaymentDetails((prev)=>({...prev, [name]:value}))
     }
-
-   
-
+    
+    
+    
     async function handlePaymentSubmit(event){
         event.preventDefault();
         setLoading(true);
-
-        const {paymentMethod, error} = await stripe.createPaymentMethod({
+        
+        const {paymentMethod, error: stripeError} = await stripe.createPaymentMethod({
             type:'card',
             card: elements.getElement(CardElement),
-            billing_details:billingDetails,
+            // billing_details:billingDetails,
         })
         
-        if(error){
-            setError(error.message);
+        if(stripeError){
             setLoading(false);
-        }else{
-
+            setError(stripeError.message);
+            return
+        }
+        const { id } = paymentMethod
+        
+    
             // Send the payment method ID to your server to complete the payment
-
+            
             const response = await axios.post('/api/charge',{
-                paymentMethodId: paymentMethod.id,
-                billingDetails
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body :JSON.stringify({
+                id,
+                billingDetails,
+                paymentDetails})
             })
-        }
-        if (response.data.status === 'succeeded'){
-            setSuccess(true);
-        }else{
-            setError(response.data.message)
-        }
 
-        setLoading(false)
+            const {status} = await response.json();
+
+        if (status === 'succeeded'){
+            setSuccess(false);
+            setError('');
+            setBillingDetails({
+                name:'',
+                email: '',
+                address: '',
+                city: '',
+                state: '',
+                postalCode: '',
+                country: '',
+            });
+            setPaymentDetails({
+                cardHolderName: '',
+                cardNumber: '',
+                expiryMonth: '',
+                expiryYear: '',
+                    cvc: '',
+            })
+        }else{
+            setLoading(false)
+            setError('Payment Failed! Please Try Again.')
+        }
+        
     }
-return(
-    <>
+return(<>
     <Head>
         <title>{siteTitle}</title>
     </Head>
@@ -90,9 +123,9 @@ return(
             Home
         </Link>
         </>
-    ) : (<elements>
 
-        <form onSubmit={handlePaymentSubmit}>
+) : (
+    <form onSubmit={handlePaymentSubmit}>
             <h2>Billing Details</h2>
             <div>
                 <label htmlFor="name">Name</label>
@@ -172,18 +205,27 @@ return(
                 id="cardHolderName"
                 type='text'
                 name="cardHolderName"
-                value={billingDetails.cardHolderName}
+                value={paymentDetails.cardHolderName}
                 onchange={handlePaymentDetailsChange}
                 />
             </div>
             <div>
             <label htmlFor="cardNumber">Card Number</label>
-                <input
-                id="cardNumber"
-                type='text'
-                name="cardNumber"
-                value={billingDetails.cardNumber}
-                onchange={handlePaymentDetailsChange}
+            <CardElement id="cardNumber"
+                options={{
+                    style:{
+                        base:{
+                            fontSize:'16px',
+                            color: '#424770',
+                            '::placeholder': {
+                                color: '#aab7c4'
+                            }
+                        },
+                        invalid:{
+                            color:'#9e2146'
+                        }
+                    }
+                }}
                 />
             </div>
             <div>
@@ -193,7 +235,7 @@ return(
                 type='text'
                 name="expiryMonth"
                 placeholder="Month"
-                value={billingDetails.expiryMonth}
+                value={paymentDetails.expiryMonth}
                 onchange={handlePaymentDetailsChange}
                 />
             </div>
@@ -204,7 +246,7 @@ return(
                 type='text'
                 name="expiryYear"
                 placeholder="Year"
-                value={billingDetails.expiryYear}
+                value={paymentDetails.expiryYear}
                 onchange={handlePaymentDetailsChange}
                 />
             </div>
@@ -215,15 +257,27 @@ return(
                 type='number'
                 name="cvc"
                 placeholder="CVC"
-                value={billingDetails.cvc}
+                value={paymentDetails.cvc}
                 onchange={handlePaymentDetailsChange}
                 />
             </div>
+            <button type="submit" disabled={!stripe || loading}>
+                <Link href='/'>{loading ? 'Processing Payment...': 'Pay Now'}</Link>
+            </button>
+            {error && <div>{error}</div>}
         </form>
-                </elements>
     )
-    }
-    </>
+}
+    </>)
+}
+
+export default function BillingPage({stripePubKey}){
+
+return(
+    <Elements stripe={stripePubKey}>
+        <billingForm/>
+    </Elements>
+
 )
     
 }
